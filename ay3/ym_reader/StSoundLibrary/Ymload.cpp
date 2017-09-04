@@ -232,7 +232,7 @@ ymbool	CYmMusic::deInterleave(void)
 			{
 				for (k=0;k<streamInc;k++)
 				{
-					pW[k] = pDataStream[j + nextPlane[k]];
+//					pW[k] = pDataStream[j + nextPlane[k]];
 				}
 				pW += streamInc;
 			}

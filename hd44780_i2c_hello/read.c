@@ -23,34 +23,6 @@ struct ym_header{
 typedef struct ym_header ym_header_s;
 
 
-
-int  deInterleave(ym_header_s hdr, uint8_t *buf, uint8_t *buf_new)
-{
-	uint32_t	nextPlane[32];
-	uint8_t	*pW;
-	uint32_t	j,k;
-	int streamInc = 16;
-	pW = buf_new;
-
-	for (j=0;j<streamInc;j++){ nextPlane[j] = hdr.n_frames*j;
-		printf("nextPlane[%d] %d\n",j,nextPlane[j]);
-	}
-
-	pW = buf_new;
-	for (j=0;j<nextPlane[1];j++)
-	{
-		for (k=0;k<streamInc;k++)
-		{
-//			printf("pw[%d] = pDataStream [j %d + nextPlane[%d] %d]\n",k,j,k,nextPlane[k]);
-			pW[k] = buf[j + nextPlane[k]];
-		}
-		pW += streamInc;
-	}
-	return 1;
-}
-
-
-
 char *get_string(FILE *plik){
 	fpos_t pos_start;
 	char *str = 0;
@@ -69,13 +41,9 @@ char *get_string(FILE *plik){
 }
 
 int main(int argc,char **argv){
-	uint8_t *buf;
-	uint8_t *buf_new;
 	printf("YM read\n");
 	FILE *plik;
-	FILE *out_plik;
-	plik = fopen("cybnoid2.bin","rb");
-	out_plik = fopen("out2.bin","wb");
+	plik = fopen("cybrnoid.bin","rb");
 
 	ym_header_s hdr;
 
@@ -96,13 +64,13 @@ int main(int argc,char **argv){
 	hdr.loop = __builtin_bswap32(hdr.loop);
 	hdr.skip = __builtin_bswap16(hdr.skip);
 
-	printf("n_frames %ld\n", hdr.n_frames);
-	printf("n_attribs %ld\n", hdr.n_attribs);
-	printf("n_digidrum %ld\n", hdr.n_digidrum);
-	printf("frequency %ld\n", hdr.freq);
-	printf("player_rate %ld\n", hdr.player_rate);
-	printf("loop %ld\n", hdr.loop);
-	printf("skip %ld\n", hdr.skip);
+	printf("n_frames 0x%ld\n", hdr.n_frames);
+	printf("n_attribs 0x%ld\n", hdr.n_attribs);
+	printf("n_digidrum 0x%ld\n", hdr.n_digidrum);
+	printf("frequency 0x%ld\n", hdr.freq);
+	printf("player_rate 0x%ld\n", hdr.player_rate);
+	printf("loop 0x%ld\n", hdr.loop);
+	printf("skip 0x%ld\n", hdr.skip);
 	fseek(plik,hdr.skip,SEEK_CUR);
 	if (hdr.n_digidrum > 0)
 	{
@@ -112,28 +80,16 @@ int main(int argc,char **argv){
 	printf("Author: %s\n",get_string(plik));
 	printf("Comment: %s\n",get_string(plik));
 
-	long pos;
-	pos = ftell(plik);
-	printf("pos %lx\n",pos);
-	fseek (plik, 0, SEEK_SET);
-	
-	char *buf_hdr = malloc(pos);
-	fread(buf_hdr,pos,1,plik);
-	fwrite(buf_hdr,pos,1,out_plik);
-	free(buf_hdr);
-
-	buf = malloc((hdr.n_frames * 16) + 4);
-	buf_new = malloc((hdr.n_frames * 16) + 4);
-	
-	fread(buf,(hdr.n_frames*16)+4,1,plik);
-	deInterleave(hdr,buf,buf_new);
-	fwrite(buf_new,(hdr.n_frames*16)+4,1,out_plik);
 
 
-	free(buf);
-	free(buf_new);
+	long howmany = 0;
+	char c[16];
+	while (fread(&c,16,1,plik) == 1){
+		howmany++;
+	}
+	printf("howmany: %d\n", howmany);
+
 	fclose(plik);
-	fclose(out_plik);
 	return 0;
 error:
 	fclose(plik);

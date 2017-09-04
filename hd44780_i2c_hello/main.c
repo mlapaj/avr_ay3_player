@@ -1,258 +1,86 @@
-#define F_CPU 16000000L
-#include "i2c.h"
+#include "common_settings.h"
 #include <string.h>
 #include <avr/io.h>
 #include <util/delay.h>
+#include "uart.h"
+#include "i2c.h"
+#include "lcd_i2c.h"
+#include "pff.h"
+#include "ym.h"
+#include "debug.h"
+#include "ay3_89xx.h"
 
 
-// bit configuration
-// 0st bit - RS
-// 1st bit - RW
-// 2nd bit - E
-// 3rd bit - KATODA
-// 4th bit - D4
-// 5th bit - D5
-// 6th bit - D6
-// 7th bit - D7
+uint8_t ay3_data[256];
 
-#define E_PIN  2
-#define RS_PIN 0
-#define RW_PIN 1
-
-uint8_t port = 0;
+void my_delay_ms(int n) {
+ while(n--) {
+  _delay_ms(1);
+ }
+}
 
 int main(){
+	int i;
+	int frame,reg;
+	ay3_init();
+	uart_init();
 	i2c_init();
-	port = 0; // all pins are low
-	i2c_write(0x3F, port);
-	_delay_ms(500);
-
-	port |= _BV(3); // enable backlight
-
-	// init procedure
-	port |= _BV(5);
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-
-	// init procedure
-	port &= 15; // port and 1111 to store control values
-	port |= _BV(5);
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-	port &= 15; // port and 1111 to store control values
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-
-	// CURSOR
-	port &= 15; // port and 1111 to store control values
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-	_delay_ms(10);
-
-	port &= 15; // port and 1111 to store control values
-	port |= (_BV(0) | _BV(1) | _BV(2) | _BV(3)) << 4;
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-
-
-
-	// increment
-	port &= 15; // port and 1111 to store control values
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-	_delay_ms(10);
-
-	port &= 15; // port and 1111 to store control values
-	port |=  (_BV(1) | _BV(2))  << 4;
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-
-	// clr scr
-	port &= 15; // port and 1111 to store control values
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-	_delay_ms(10);
-
-	port &= 15; // port and 1111 to store control values
-	port |=  (_BV(0))  << 4;
-	i2c_write(0x3F, port);
-	port |= _BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-	port &= ~_BV(E_PIN);
-	i2c_write(0x3F, port);
-	_delay_us(100);
-
-
-
-
-
-
-	_delay_ms(10);
-	char text[] = "hello";
-	int i = 0;
-
-
-	for (i = 0; i < strlen(text); i++){
-		// write text
-	    port &= 15; // port and 1111 to store control values
-		port |= _BV(RS_PIN);
-		port |= (((text[i] >> 4) & 0xF) << 4);
-		i2c_write(0x3F, port);
-		port |= _BV(E_PIN);
-		i2c_write(0x3F, port);
-		_delay_us(100);
-		port &= ~_BV(E_PIN);
-		i2c_write(0x3F, port);
-		_delay_us(100);
-
-	    port &= 15; // port and 1111 to store control values
-		port |= (((text[i]) & 0xF) << 4);
-		i2c_write(0x3F, port);
-		port |= _BV(E_PIN);
-		i2c_write(0x3F, port);
-		_delay_us(100);
-
-		port &= ~_BV(E_PIN);
-		i2c_write(0x3F, port);
-		_delay_us(100);
-
-		port &= ~_BV(RS_PIN);
-		i2c_write(0x3F, port);
+	lcd_init();
+	uart_debug("YM player (C) 2017 Marcin Lapaj");
+	TCCR0A |= (1 << CS00);
+	TCCR0B |= _BV(CS02) | _BV(CS00);;
+	DIR dj;
+	FRESULT retVal;
+	FATFS fs;
+	retVal = pf_mount (&fs);
+	if (retVal != FR_OK){
+		lcd_error("mt mnt nok: %d",retVal);
 	}
+	uart_debug("SD Card mounted");
+	retVal = pf_opendir (&dj,"");
+	if (retVal != FR_OK){
+		lcd_error("od nok code: %d",retVal);
+	}
+	uart_debug("Main directory opened");
+	uart_debug("File list");
+	FILINFO fno;
+	//while (1)
+	{
+		retVal = pf_readdir (&dj, &fno); /* Read a directory item from the open directory */
+		if (retVal != FR_OK){
+			lcd_error("rd nok code: %d",retVal);
+		}
+		if (fno.fname[0] == 0){
+			//break;
+		}
+		lcd_debug("fn:%s",fno.fname);
+		uart_debug(fno.fname);
+		_delay_ms(500);
+	}
+	lcd_clr();
+	uart_debug("opening file");
 
+	ym_load("CYBRNOID.BIN");
 
+	int total_frames = 0;
+	
+	while(1){
+		TCNT0 = 0;
+		if (ym_get_registers(ay3_data)!= 0)
+			break;
 
+		for (reg=0;reg<14;reg++){ // we use 14 first registers
+			write_psg_register(reg,ay3_data[reg]);
+		}
+		// uart_debug("Timer val %d",TCNT0 / 16);
+		// for 16 MHZ 16 ticks it is a 1ms
+		// frame rate
+		my_delay_ms(19 - TCNT0/16);
+		total_frames += 16;
+	}
+	uart_debug("processed total frames: %d",total_frames);
 	return 0;
-#if 0
 
-	_delay_ms(1000);
-
-	// LCD initialisaion
-	DATA_PORT = _BV(5);
-	CONTROL_PORT |= _BV(E_PIN);
-	_delay_us(100);
-	CONTROL_PORT &= ~_BV(E_PIN);
-	_delay_us(100);
-
-
-	// LCD initialisaion
-	DATA_PORT = _BV(5); // once again 4 bit
-	CONTROL_PORT |= _BV(E_PIN);
-	_delay_us(100);
-	CONTROL_PORT &= ~_BV(E_PIN);
-	_delay_us(100);
-	_delay_us(100);
-
-	DATA_PORT = 0;
-	CONTROL_PORT |= _BV(E_PIN);
-	_delay_us(100);
-	CONTROL_PORT &= ~_BV(E_PIN);
-	_delay_us(100);
-
-
-	// CURSOR
-	_delay_ms(10);
-
-	DATA_PORT = 0;
-	CONTROL_PORT |= _BV(E_PIN);
-	_delay_us(100);
-	CONTROL_PORT &= ~_BV(E_PIN);
-	_delay_us(100);
-
-	DATA_PORT = (_BV(0) | _BV(1) | _BV(2) | _BV(3)) << 4;
-	CONTROL_PORT |= _BV(E_PIN);
-	_delay_us(100);
-	CONTROL_PORT &= ~_BV(E_PIN);
-	_delay_us(100);
-
-	_delay_ms(10);
-
-	// increment mode
-	DATA_PORT = 0;
-	CONTROL_PORT |= _BV(E_PIN);
-	_delay_us(100);
-	CONTROL_PORT &= ~_BV(E_PIN);
-	_delay_us(100);
-
-	DATA_PORT = (_BV(1) | _BV(2)) << 4;
-	CONTROL_PORT |= _BV(E_PIN);
-	_delay_us(100);
-	CONTROL_PORT &= ~_BV(E_PIN);
-	_delay_us(100);
-
-
-	_delay_ms(10);
-	char text[] = "hello";
-	int i = 0;
-
-	for (i = 0; i < strlen(text); i++){
-		// write text
-		CONTROL_PORT |= _BV(RS_PIN);
-		DATA_PORT = (((text[i] >> 4) & 0xF) << 4);
-		CONTROL_PORT |= _BV(E_PIN);
-		_delay_us(100);
-		CONTROL_PORT &= ~_BV(E_PIN);
-		_delay_us(100);
-		CONTROL_PORT &= ~_BV(RS_PIN);
-
-		_delay_us(500);
-		CONTROL_PORT |= _BV(RS_PIN);
-		DATA_PORT = (((text[i]) & 0xF) << 4);
-		CONTROL_PORT |= _BV(E_PIN);
-		_delay_us(100);
-		CONTROL_PORT &= ~_BV(E_PIN);
-		_delay_us(100);
-		CONTROL_PORT &= ~_BV(RS_PIN);
-	}
-#endif
 }
+
 

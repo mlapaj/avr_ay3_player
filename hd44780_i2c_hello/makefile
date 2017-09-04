@@ -1,7 +1,7 @@
 CC=avr-gcc
 CFLAGS=-g -Os -mmcu=atmega328p
 main.elf: main.c
-		$(CC) $(CFLAGS) main.c i2c.c -o main.elf
+		$(CC) $(CFLAGS) main.c i2c.c diskio.c pff.c lcd_i2c.c ym.c debug.c uart.c ay3_89xx.c -o main.elf
 		avr-objdump -h -S main.elf > main.lst
 		avr-objcopy -j .text -j .data -O ihex main.elf main.hex
 clean:

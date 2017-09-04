@@ -1,4 +1,4 @@
-#define F_CPU 16000000L
+#include "common_settings.h"
 #include "i2c.h"
 #include <util/twi.h>
 #include <avr/power.h>
